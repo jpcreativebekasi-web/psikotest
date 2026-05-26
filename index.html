@@ -316,7 +316,16 @@
         else { field.type = 'password'; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
     }
     
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+    function escapeHtml(str) { 
+        if (!str) return ""; 
+        if (typeof str !== 'string') str = String(str);
+        return str.replace(/[&<>]/g, function(m) { 
+            if (m === '&') return '&amp;'; 
+            if (m === '<') return '&lt;'; 
+            if (m === '>') return '&gt;'; 
+            return m; 
+        }); 
+    }
     
     function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
     
@@ -555,14 +564,28 @@
     }
     
     function renderAdminTable(data) {
-        const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = '';
+        const tbody = document.getElementById('adminTableBody'); 
+        if (!tbody) {
+            console.log("❌ Element adminTableBody tidak ditemukan!");
+            return;
+        }
+        tbody.innerHTML = '';
+        console.log("🎨 Merender", data.length, "baris data");
         for (const row of data) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<tr>${row.id_siswa || '-'}</td><td>${escapeHtml(row.nama || '-')}</td><td>${escapeHtml(row.kelas || '-')}</td><td>${escapeHtml(row.asal_sekolah || '-')}</td><td>${escapeHtml(row.cabang || '-')}</td>
-                <td><span class="badge">${row.tipe_riasec_tertinggi || '-'}</span></td><td><span class="badge">${row.subtes_ist_tertinggi || '-'}</span></td>
-                <td><button class="btn btn-secondary" style="padding: 8px 15px; font-size: 13px;" onclick="viewLaporan(this)" data-siswa='${JSON.stringify(row).replace(/'/g, "&#39;")}'><i class="fa-solid fa-eye"></i> Lihat</button></td>`;
+            tr.innerHTML = `
+                <td>${row.id_siswa || '-'}</td>
+                <td>${escapeHtml(row.nama)}</td>
+                <td>${escapeHtml(row.kelas)}</td>
+                <td>${escapeHtml(row.asal_sekolah)}</td>
+                <td>${escapeHtml(row.cabang)}</td>
+                <td><span class="badge">${escapeHtml(row.tipe_riasec_tertinggi)}</span></td>
+                <td><span class="badge">${escapeHtml(row.subtes_ist_tertinggi)}</span></td>
+                <td><button class="btn btn-secondary" style="padding: 8px 15px; font-size: 13px;" onclick="viewLaporan(this)" data-siswa='${JSON.stringify(row).replace(/'/g, "&#39;")}'><i class="fa-solid fa-eye"></i> Lihat</button></td>
+            `;
             tbody.appendChild(tr);
         }
+        console.log("✅ Render selesai");
     }
     
     function populateFilterOptions(data) {
