@@ -260,7 +260,6 @@
 
 <script>
     // ==================== KONFIGURASI ====================
-    // 🔴 GANTI DENGAN URL APPS SCRIPT KAMU!
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEWkTAHEyZPuc8tqPMeKlgty_g3xo37u4GjJLAGbmVxXpqnGWbkWCVuMk6TG6MiT4Zxw/exec";
     
     let soalList = [];
@@ -275,15 +274,12 @@
     
     let siswaData = { nama: "", kelas: "", sekolah: "", cabang: "" };
     
-    // Mapping RIASEC (6 tipe)
     const riasecTypes = ["Realistic", "Investigative", "Artistic", "Social", "Enterprising", "Conventional"];
     const riasecColors = { Realistic: "#4CAF50", Investigative: "#2196F3", Artistic: "#9C27B0", Social: "#FF9800", Enterprising: "#F44336", Conventional: "#607D8B" };
     
-    // Mapping IST (9 subtes)
     const istSubtes = ["PU", "FG", "PV", "PA", "KA", "AB", "MB", "S2", "S3"];
     const istNames = { PU: "Pengetahuan Umum", FG: "Figural", PV: "Penalaran Verbal", PA: "Penalaran Angka", KA: "Aritmatika", AB: "Penalaran Abstrak", MB: "Memori", S2: "Spasial 2D", S3: "Spasial 3D" };
     
-    // Cache untuk mapping
     let mappingRiasecCache = null;
     let mappingIstCache = null;
     
@@ -320,7 +316,16 @@
         else { field.type = 'password'; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
     }
     
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+    function escapeHtml(str) { 
+        if (!str) return ""; 
+        if (typeof str !== 'string') str = String(str);
+        return str.replace(/[&<>]/g, function(m) { 
+            if (m === '&') return '&amp;'; 
+            if (m === '<') return '&lt;'; 
+            if (m === '>') return '&gt;'; 
+            return m; 
+        }); 
+    }
     
     function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
     
@@ -531,8 +536,23 @@
     }
     
     async function loadAdminData() {
-        try { const res = await fetch(`${APPS_SCRIPT_URL}?action=getAllHasil`); const data = await res.json(); if (data.success && data.data) { renderAdminTable(data.data); populateFilterOptions(data.data); } }
-        catch(err) { loadAdminDataDemo(); }
+        try { 
+            console.log("🟢 Mengambil data dari API...");
+            const res = await fetch(`${APPS_SCRIPT_URL}?action=getAllHasil`); 
+            const data = await res.json(); 
+            console.log("📦 Data dari API:", data);
+            if (data.success && data.data && data.data.length > 0) { 
+                renderAdminTable(data.data); 
+                populateFilterOptions(data.data); 
+            } else {
+                console.log("⚠️ Data kosong, pake demo data");
+                loadAdminDataDemo(); 
+            }
+        }
+        catch(err) { 
+            console.log("❌ Error fetch:", err); 
+            loadAdminDataDemo(); 
+        }
     }
     
     function loadAdminDataDemo() {
@@ -544,14 +564,28 @@
     }
     
     function renderAdminTable(data) {
-        const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = '';
+        const tbody = document.getElementById('adminTableBody'); 
+        if (!tbody) {
+            console.log("❌ Element adminTableBody tidak ditemukan!");
+            return;
+        }
+        tbody.innerHTML = '';
+        console.log("🎨 Merender", data.length, "baris data");
         for (const row of data) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<tr>${row.id_siswa || '-'}</td><td>${escapeHtml(row.nama || '-')}</td><td>${escapeHtml(row.kelas || '-')}</td><td>${escapeHtml(row.asal_sekolah || '-')}</td><td>${escapeHtml(row.cabang || '-')}</td>
-                <td><span class="badge">${row.tipe_riasec_tertinggi || '-'}</span></td><td><span class="badge">${row.subtes_ist_tertinggi || '-'}</span></td>
-                <td><button class="btn btn-secondary" style="padding: 8px 15px; font-size: 13px;" onclick="viewLaporan(this)" data-siswa='${JSON.stringify(row).replace(/'/g, "&#39;")}'><i class="fa-solid fa-eye"></i> Lihat</button></td>`;
+            tr.innerHTML = `
+                <td>${row.id_siswa || '-'}</td>
+                <td>${escapeHtml(row.nama)}</td>
+                <td>${escapeHtml(row.kelas)}</td>
+                <td>${escapeHtml(row.asal_sekolah)}</td>
+                <td>${escapeHtml(row.cabang)}</td>
+                <td><span class="badge">${escapeHtml(row.tipe_riasec_tertinggi)}</span></td>
+                <td><span class="badge">${escapeHtml(row.subtes_ist_tertinggi)}</span></td>
+                <td><button class="btn btn-secondary" style="padding: 8px 15px; font-size: 13px;" onclick="viewLaporan(this)" data-siswa='${JSON.stringify(row).replace(/'/g, "&#39;")}'><i class="fa-solid fa-eye"></i> Lihat</button></td>
+            `;
             tbody.appendChild(tr);
         }
+        console.log("✅ Render selesai");
     }
     
     function populateFilterOptions(data) {
@@ -585,7 +619,6 @@
         if (hasilData.skor_riasec_json) { try { skorRiasec = JSON.parse(hasilData.skor_riasec_json); } catch(e) {} }
         if (hasilData.skor_ist_json) { try { skorIst = JSON.parse(hasilData.skor_ist_json); } catch(e) {} }
         
-        // Ambil mapping dari cache atau API
         const { riasec: mappingRiasec, ist: mappingIst } = await loadMappings();
         
         const dataRiasec = mappingRiasec[hasilData.tipe_riasec_tertinggi] || {};
